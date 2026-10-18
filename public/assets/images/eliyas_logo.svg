@@ -1,0 +1,56 @@
+<svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ewGoldBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD54F" />
+      <stop offset="45%" stop-color="#ECC257" />
+      <stop offset="70%" stop-color="#E5A610" />
+      <stop offset="100%" stop-color="#F5B800" />
+    </linearGradient>
+
+    <linearGradient id="ewGoldAccent" x1="0%" y1="0%" x2="100%" y2="80%">
+      <stop offset="0%" stop-color="#FFD95A" />
+      <stop offset="35%" stop-color="#ECC257" />
+      <stop offset="75%" stop-color="#E29E0B" />
+      <stop offset="100%" stop-color="#F5B300" />
+    </linearGradient>
+
+    <linearGradient id="ewNavyBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#083785" />
+      <stop offset="50%" stop-color="#09275E" />
+      <stop offset="100%" stop-color="#061E47" />
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Golden Squircle Frame -->
+  <rect x="24" y="24" width="464" height="464" rx="118" ry="118" fill="url(#ewGoldBorder)" />
+
+  <!-- Inner White Rounded Canvas -->
+  <rect x="44" y="44" width="424" height="424" rx="98" ry="98" fill="#FCFCFC" />
+
+  <!-- EW Monogram Glyphs -->
+  <g id="EW_Monogram">
+    <!-- Letter E Spine & Main Navy -->
+    <path
+      d="M 130 164 C 120 164, 114 170, 114 180 L 114 326 C 114 336, 120 342, 130 342 L 242 342 C 247 342, 252 338, 248 333 L 240 318 C 238 314, 234 314, 230 314 L 152 314 L 152 266 L 214 266 L 214 238 L 152 238 L 152 196 L 242 196 L 230 164 Z"
+      fill="url(#ewNavyBlue)"
+    />
+
+    <!-- E Middle Gold Accent -->
+    <path d="M 152 198 L 216 198 L 226 218 L 152 218 Z" fill="url(#ewGoldAccent)" />
+
+    <!-- E Bottom Gold Accent -->
+    <path d="M 152 296 L 232 296 L 237 314 L 152 314 Z" fill="url(#ewGoldAccent)" />
+
+    <!-- W Top Diagonal Stem -->
+    <path d="M 234 164 L 266 242 L 282 234 L 254 164 Z" fill="url(#ewNavyBlue)" />
+
+    <!-- Interlocking Gold Facet -->
+    <path d="M 264 240 L 246 296 L 262 342 L 280 292 Z" fill="url(#ewGoldAccent)" />
+
+    <!-- W Rest of Stems -->
+    <path
+      d="M 280 292 L 262 342 C 264 346, 269 346, 273 344 L 348 180 L 366 338 C 367 344, 372 344, 375 340 L 418 174 C 420 168, 416 164, 408 164 L 384 164 L 358 290 L 338 164 L 316 164 L 288 274 Z"
+      fill="url(#ewNavyBlue)"
+    />
+  </g>
+</svg>
