@@ -24,6 +24,41 @@ const fetchApiData = async (path) => {
   return payload.data;
 };
 
+const useFallbackData = (resource, error, fallback) => {
+  console.warn(`Unable to load ${resource} from the API; using local portfolio data.`, error);
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("portfolio_api_status", {
+      detail: { available: false, resource }
+    }));
+  }
+  return fallback();
+};
+
+const reportApiAvailable = (resource) => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("portfolio_api_status", {
+      detail: { available: true, resource }
+    }));
+  }
+};
+
+const filterFallbackProjects = (projects, layer) => {
+  if (layer === "All") return projects;
+  if (layer === "Live") {
+    return projects.filter((project) => /live|published/i.test(project.status || ""));
+  }
+  if (layer === "Future") {
+    return projects.filter((project) => /future|pipeline/i.test(project.status || ""));
+  }
+  if (layer === "Frontend") {
+    return projects.filter((project) => project.layer === "Frontend");
+  }
+  if (layer === "Full-Stack") {
+    return projects.filter((project) => ["Frontend + Backend", "Full-Stack"].includes(project.layer));
+  }
+  return projects;
+};
+
 export const DEFAULT_TECH_STACK = [
   {
     id: "nextjs",
@@ -208,13 +243,18 @@ class PortfolioController {
   }
 
   static async fetchProfile() {
-    const data = await fetchApiData("/api/profile");
-    if (!data || typeof data !== "object") {
-      throw new Error("The database returned an invalid profile.");
+    try {
+      const data = await fetchApiData("/api/profile");
+      if (!data || typeof data !== "object") {
+        throw new Error("The database returned an invalid profile.");
+      }
+      const profile = normalizeProfileContact(data);
+      localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(profile));
+      reportApiAvailable("profile");
+      return profile;
+    } catch (error) {
+      return useFallbackData("profile", error, () => this.getProfile());
     }
-    const profile = normalizeProfileContact(data);
-    localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(profile));
-    return profile;
   }
 
   static async updateProfile(data) {
@@ -255,11 +295,16 @@ class PortfolioController {
   }
 
   static async fetchProjects(layer = "All") {
-    const url = layer !== "All" ? `/api/projects?layer=${encodeURIComponent(layer)}` : "/api/projects";
-    const projects = await fetchApiData(url);
-    if (!Array.isArray(projects)) throw new Error("The database returned invalid projects.");
-    if (layer === "All") localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(projects));
-    return projects;
+    try {
+      const url = layer !== "All" ? `/api/projects?layer=${encodeURIComponent(layer)}` : "/api/projects";
+      const projects = await fetchApiData(url);
+      if (!Array.isArray(projects)) throw new Error("The database returned invalid projects.");
+      if (layer === "All") localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(projects));
+      reportApiAvailable("projects");
+      return projects;
+    } catch (error) {
+      return useFallbackData("projects", error, () => filterFallbackProjects(this.getProjects(), layer));
+    }
   }
 
   static async saveProject(project) {
@@ -314,10 +359,15 @@ class PortfolioController {
   }
 
   static async fetchSkills() {
-    const skills = await fetchApiData("/api/skills");
-    if (!Array.isArray(skills)) throw new Error("The database returned invalid skills.");
-    localStorage.setItem(STORAGE_KEY_TECHS, JSON.stringify(skills));
-    return skills;
+    try {
+      const skills = await fetchApiData("/api/skills");
+      if (!Array.isArray(skills)) throw new Error("The database returned invalid skills.");
+      localStorage.setItem(STORAGE_KEY_TECHS, JSON.stringify(skills));
+      reportApiAvailable("skills");
+      return skills;
+    } catch (error) {
+      return useFallbackData("skills", error, () => this.getSkills());
+    }
   }
 
   static async saveSkill(skill) {
@@ -368,11 +418,21 @@ class PortfolioController {
   }
 
   static async fetchCertificates(category = "All") {
-    const url = category !== "All" ? `/api/certificates?category=${encodeURIComponent(category)}` : "/api/certificates";
-    const certificates = await fetchApiData(url);
-    if (!Array.isArray(certificates)) throw new Error("The database returned invalid certificates.");
-    if (category === "All") localStorage.setItem(STORAGE_KEY_CERTS, JSON.stringify(certificates));
-    return certificates;
+    try {
+      const url = category !== "All" ? `/api/certificates?category=${encodeURIComponent(category)}` : "/api/certificates";
+      const certificates = await fetchApiData(url);
+      if (!Array.isArray(certificates)) throw new Error("The database returned invalid certificates.");
+      if (category === "All") localStorage.setItem(STORAGE_KEY_CERTS, JSON.stringify(certificates));
+      reportApiAvailable("certificates");
+      return certificates;
+    } catch (error) {
+      return useFallbackData("certificates", error, () => {
+        const localCertificates = this.getCertificates();
+        return category === "All"
+          ? localCertificates
+          : localCertificates.filter((certificate) => certificate.category === category);
+      });
+    }
   }
 
   static async saveCertificate(cert) {
@@ -424,10 +484,15 @@ class PortfolioController {
   }
 
   static async fetchExperiences() {
-    const experiences = await fetchApiData("/api/experiences");
-    if (!Array.isArray(experiences)) throw new Error("The database returned invalid experiences.");
-    localStorage.setItem(STORAGE_KEY_EXPS, JSON.stringify(experiences));
-    return experiences;
+    try {
+      const experiences = await fetchApiData("/api/experiences");
+      if (!Array.isArray(experiences)) throw new Error("The database returned invalid experiences.");
+      localStorage.setItem(STORAGE_KEY_EXPS, JSON.stringify(experiences));
+      reportApiAvailable("experiences");
+      return experiences;
+    } catch (error) {
+      return useFallbackData("experiences", error, () => this.getExperiences());
+    }
   }
 
   static async saveExperience(exp) {

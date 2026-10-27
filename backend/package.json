@@ -1,0 +1,14 @@
+{
+  "name": "eliyas-portfolio-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "check-express": "node check-express.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "mysql2": "^3.24.6"
+  }
+}

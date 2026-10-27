@@ -10,7 +10,7 @@ import "dotenv/config";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createBackendApp } from "./server.js";
+import { createBackendApp, createHttpServer } from "./server.js";
 import { errorHandler } from './middleware/errorHandler.js';
 import { db } from "./config/db.js";
 import { DEFAULT_PROFILE } from "./models/profileModel.js";
@@ -35,11 +35,16 @@ async function startServer() {
     });
   }
   app.use(errorHandler);
-  app.listen(Number(PORT), "0.0.0.0", () => {
+  createHttpServer(app).listen(Number(PORT), "0.0.0.0", () => {
     console.log(`[Full-Stack MVC] Server running on http://0.0.0.0:${PORT}`);
   });
 }
-startServer().catch((error) => {
+startServer().catch(async (error) => {
   console.error("[Full-Stack MVC] Failed to initialize MySQL:", error);
+  try {
+    await db.close();
+  } catch (closeError) {
+    console.error("[Full-Stack MVC] Failed to close MySQL pool:", closeError);
+  }
   process.exitCode = 1;
 });

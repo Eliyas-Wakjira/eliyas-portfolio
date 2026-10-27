@@ -13,12 +13,12 @@ import { ProjectDetailModalView } from "./views/ProjectDetailModalView";
 import { LoginModalView } from "./views/LoginModalView";
 import { CVModalView } from "./views/CVModalView";
 import { AdminStudioModalView } from "./views/AdminStudioModalView";
-import { PortfolioController } from "./controllers/portfolioController";
+import { PortfolioController, DEFAULT_PROFILE } from "./controllers/portfolioController";
 import { FolderGit2, Cpu, Briefcase, Award, UserCheck, Mail } from "lucide-react";
 const AppContent = () => {
   const { isAuthenticated, isAdmin } = useAuth();
   const [activeNavTab, setActiveNavTab] = useState("home");
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(() => PortfolioController.getProfile() || DEFAULT_PROFILE);
   const [selectedProject, setSelectedProject] = useState(null);
   const [isCVModalOpen, setIsCVModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);

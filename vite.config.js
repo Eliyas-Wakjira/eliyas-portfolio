@@ -9,6 +9,7 @@ export default defineConfig(() => {
 
   return {
     root: frontendRoot,
+    envDir: projectRoot,
     publicDir: path.resolve(projectRoot, "public"),
     build: {
       outDir: path.resolve(projectRoot, "dist"),

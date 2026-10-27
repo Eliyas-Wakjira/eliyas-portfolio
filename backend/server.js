@@ -6,6 +6,7 @@
  */
 import express from "express";
 import "dotenv/config";
+import { createServer } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import apiRouter from './routes/index.js';
@@ -45,6 +46,17 @@ function createBackendApp() {
     }
     next();
   });
+  app.use("/api", (req, res, next) => {
+    res.setTimeout(30_000, () => {
+      console.error(`[Portfolio API] Request timed out: ${req.method} ${req.originalUrl}`);
+      if (res.headersSent) {
+        res.destroy();
+        return;
+      }
+      res.status(503).json({ error: { message: "Request timed out" } });
+    });
+    next();
+  });
   app.use((_req, res, next) => {
     res.set({
       "X-Content-Type-Options": "nosniff",
@@ -70,8 +82,16 @@ function createBackendApp() {
   app.use("/api", apiRouter);
   return app;
 }
+function createHttpServer(app) {
+  const server = createServer(app);
+  server.requestTimeout = 30_000;
+  server.headersTimeout = 15_000;
+  server.keepAliveTimeout = 5_000;
+  return server;
+}
 export {
-  createBackendApp
+  createBackendApp,
+  createHttpServer
 };
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -81,12 +101,17 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       app.use(errorHandler);
 
       const port = Number(process.env.PORT || 3000);
-      app.listen(port, "0.0.0.0", () => {
+      createHttpServer(app).listen(port, "0.0.0.0", () => {
         console.log(`[Portfolio API] Server running on http://0.0.0.0:${port}`);
       });
     })
-    .catch((error) => {
+    .catch(async (error) => {
       console.error("[Portfolio API] Failed to initialize MySQL:", error);
+      try {
+        await db.close();
+      } catch (closeError) {
+        console.error("[Portfolio API] Failed to close MySQL pool:", closeError);
+      }
       process.exitCode = 1;
     });
 }

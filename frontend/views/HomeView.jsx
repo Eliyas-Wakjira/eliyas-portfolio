@@ -41,10 +41,11 @@ const HomeView = ({
   onOpenCV
 }) => {
   const profile = loadedProfile || {};
-  const [projects, setProjects] = useState([]);
-  const [certificates, setCertificates] = useState([]);
-  const [experiences, setExperiences] = useState([]);
+  const [projects, setProjects] = useState(() => PortfolioController.getProjects());
+  const [certificates, setCertificates] = useState(() => PortfolioController.getCertificates());
+  const [experiences, setExperiences] = useState(() => PortfolioController.getExperiences());
   const [dataError, setDataError] = useState("");
+  const [unavailableResources, setUnavailableResources] = useState(() => new Set());
   const [projectFilter, setProjectFilter] = useState("All");
   const handleTabSwitch = (tabId) => {
     if (onSelectTab) onSelectTab(tabId);
@@ -77,12 +78,24 @@ const HomeView = ({
   };
 
   useEffect(() => {
+    const handleApiStatus = (event) => {
+      setUnavailableResources((current) => {
+        const next = new Set(current);
+        if (event.detail.available) next.delete(event.detail.resource);
+        else next.add(event.detail.resource);
+        return next;
+      });
+    };
+    window.addEventListener("portfolio_api_status", handleApiStatus);
     loadData();
     const handleUpdate = () => {
       loadData();
     };
     window.addEventListener("portfolio_data_updated", handleUpdate);
-    return () => window.removeEventListener("portfolio_data_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("portfolio_api_status", handleApiStatus);
+      window.removeEventListener("portfolio_data_updated", handleUpdate);
+    };
   }, [projectFilter]);
   const handleContactSubmit = async (e) => {
     e.preventDefault();
@@ -111,6 +124,11 @@ const HomeView = ({
       {dataError && (
         <p className="mx-auto max-w-7xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800" role="alert">
           Unable to load portfolio content from the database: {dataError}
+        </p>
+      )}
+      {unavailableResources.size > 0 && (
+        <p className="mx-auto max-w-7xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+          Showing saved/default portfolio information while the database service is unavailable. Contact messages and admin changes need the backend.
         </p>
       )}
       {

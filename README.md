@@ -26,16 +26,20 @@ under `public/`.
 2. Copy `.env.example` to `.env`, then configure an administrator login:
 
    Configure `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, and
-   `MYSQL_PASSWORD` for a MySQL 8 server. The configured user must be allowed
-   to create the database. To create the database and tables manually, run:
+   `MYSQL_PASSWORD` for your MySQL server. Create the database and grant the
+   configured user access to it before starting the application. For a local
+   database, create it first, then run:
 
    ```powershell
-   mysql -u root -p < schema.sql
+   mysql -u root -p -e "CREATE DATABASE eliyas_portfolio CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+   mysql -u root -p eliyas_portfolio < schema.sql
    ```
 
-   When the application starts, it also creates any missing tables and seeds an
-   empty database with the portfolio data from `backend/config/seedData.js`.
-   Frontend portfolio content is then read through the API from MySQL.
+   In cPanel, create the database and database user with **MySQL Database Wizard**,
+   assign the user all privileges on that database, and use the complete
+   cPanel-prefixed database and username in the environment. The app does not
+   try to create the database; it creates missing tables and seeds an empty
+   database with the portfolio data from `backend/config/seedData.js`.
 
    - Set `ADMIN_EMAIL` to the administrator email.
    - Set `ADMIN_PASSWORD_HASH` to a salted scrypt hash in `salt:hash` format.
@@ -76,25 +80,42 @@ under `public/`.
 ## Deploying the frontend and backend separately
 
 Both deployments use the repository root. Deploy the API as a Node.js service
-with `npm run start:backend` as its start command. Set `ADMIN_EMAIL`,
+with `backend/server.js` as its startup file (or `npm run start:backend` where
+the host supports npm start commands). For cPanel, use the backend folder as a
+standalone Node.js application root: upload the contents of `backend/` to a
+dedicated folder such as `portfolio_backend`, set the startup file to
+`server.js`, and run NPM Install there. Its `package.json` contains only the
+API's runtime dependencies, avoiding installation of frontend/build packages
+on the API host. Create the application for `portfolio.eliyastech.com` and
+configure its environment variables in cPanel. Set `ADMIN_EMAIL`,
 `ADMIN_PASSWORD_HASH`, `AUTH_TOKEN_SECRET`, and `FRONTEND_ORIGINS` in the API
-service environment. `FRONTEND_ORIGINS` must contain the exact HTTPS frontend
-origin, without a trailing slash (for example, `https://portfolio.example.com`).
-The API health check is available at `/api/health`.
+service environment. Use `https://eliyastech.com` as `FRONTEND_ORIGINS`.
+Set `MYSQL_HOST` to the MySQL host shown by cPanel (usually `localhost`),
+`MYSQL_DATABASE` and `MYSQL_USER` to their full cPanel-prefixed names, and
+`MYSQL_PASSWORD` to the database user's password. The API health check is
+available at `https://portfolio.eliyastech.com/api/health`.
 
-Deploy the frontend as a static site: use `npm run build` as its build command,
-`dist` as its publish directory, and set `VITE_API_URL` to the API origin
-(for example, `https://api.example.com`) in the frontend build environment.
-The value is embedded at build time. If the API stores uploaded screenshots,
-keep its persistent storage enabled for `public/frontend/assets/uploads`.
+Database connections are capped at five, with up to twenty requests waiting
+for a connection. Database connection attempts and individual queries time
+out after ten seconds; queries from the authenticated SQL console are also
+limited to five seconds by MySQL. API responses, incoming HTTP requests, headers, and idle keep-alive sockets
+have server-side timeouts to prevent connections from staying open
+indefinitely. Monitor cPanel's **Resource Usage** page after deployment.
+
+Deploy the frontend as a static site at `eliyastech.com`: build with
+`VITE_API_URL=https://portfolio.eliyastech.com`, then copy the contents of `dist`
+to the domain's document root (usually `public_html`). The value is embedded at
+build time. If the API stores uploaded screenshots, preserve
+`public/frontend/assets/uploads` in the Node.js application's writable storage.
 Certificate files accept JPEG, PNG, WebP, and PDF up to 10 MB; uploaded files
 are served from that same directory.
+If the API is unavailable, the frontend shows saved browser data or its bundled
+portfolio defaults. Contact messages and administrator changes require the API.
 
-For administrator sign-in across the separately hosted services, use HTTPS
-custom domains on the same site, such as `portfolio.example.com` and
-`api.example.com`. The session cookie is HttpOnly and SameSite=Strict; unrelated
-provider domains may block it in browsers. Keep `FRONTEND_ORIGINS` restricted
-to the actual frontend origin.
+For administrator sign-in across these subdomains, enable HTTPS on both
+domains. The session cookie is HttpOnly and SameSite=Strict; same-site
+subdomains allow it to be sent between the frontend and API. Keep
+`FRONTEND_ORIGINS` restricted to `https://eliyastech.com`.
 
 ## Project screenshots
 
